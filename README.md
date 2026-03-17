@@ -1,5 +1,5 @@
 # 📝 AutoEIT: Automated Scoring System Prototype
-**Google Summer of Code 2026 - HumanAI Evaluation Test** **Applicant:** Navvya Jain
+**Google Summer of Code 2026 - HumanAI Evaluation Test** **Applicant:** Navya Jain
 
 ## 📌 Project Overview
 This repository contains my solution for **Test II: Automated scoring system**. The objective is to build a highly reproducible, standardized scoring engine that applies the Ortega (2000) meaning-based rubric to Spanish Elicited Imitation Task (EIT) transcriptions.
@@ -56,7 +56,7 @@ While this prototype exceeds the evaluation baseline goals, my GSoC summer timel
    ```bash
     pip install pandas openpyxl xlsxwriter sentence-transformers spacy jiwer jellyfish Levenshtein scikit-learn==1.6.1 joblib streamlit   
 
-    or 
+or 
     ```bash
     pip install -r requirements.txt 
 
