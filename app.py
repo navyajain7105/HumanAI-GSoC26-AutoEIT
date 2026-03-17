@@ -3,6 +3,7 @@ import pandas as pd
 import re
 import string
 import spacy
+import spacy.cli
 import jellyfish
 import Levenshtein
 import jiwer
@@ -26,8 +27,15 @@ and use a trained Random Forest to automatically grade the transcriptions.
 def load_nlp_models():
     with st.spinner("Loading NLP Models (SBERT & spaCy)... This takes a minute on startup."):
         sbert = SentenceTransformer('intfloat/multilingual-e5-base')
-        spacy_nlp = spacy.load("es_core_news_md")
-        rf_model = joblib.load('autoeit_model.pkl') # Make sure this file is in your folder!
+        
+        try:
+            spacy_nlp = spacy.load("es_core_news_md")
+        except OSError:
+            print("Downloading spaCy Spanish model...")
+            spacy.cli.download("es_core_news_md")
+            spacy_nlp = spacy.load("es_core_news_md")
+
+        rf_model = joblib.load('autoeit_model.pkl') 
     return sbert, spacy_nlp, rf_model
 
 model, nlp, rf_model = load_nlp_models()
