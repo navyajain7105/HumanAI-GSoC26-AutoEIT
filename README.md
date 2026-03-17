@@ -55,9 +55,7 @@ While this prototype exceeds the evaluation baseline goals, my GSoC summer timel
 1. Ensure all dependencies are installed: 
    ```bash
     pip install pandas openpyxl xlsxwriter sentence-transformers spacy jiwer jellyfish Levenshtein scikit-learn==1.6.1 joblib streamlit   
-
-or 
-    ```bash
+    <!-- or -->
     pip install -r requirements.txt 
 
 2. Download the Spanish spaCy model:
