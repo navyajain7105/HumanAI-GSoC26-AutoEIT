@@ -6,6 +6,10 @@ This repository contains my solution for **Test II: Automated scoring system**. 
 
 Rather than relying on arbitrary, hard-coded if/else thresholds, I engineered an **Optimized Machine Learning Pipeline**. The system extracts 8 distinct linguistic features using a hybrid NLP approach and utilizes a Cross-Validated, Balanced Random Forest Classifier to learn the implicit boundaries of human raters and prevent AI hallucination.
 
+## 🌐 Live Web Demo
+Test the interactive scoring dashboard directly in your browser without writing any code:
+👉 **[Launch the AutoEIT Web App](https://humanai-gsoc26-autoeit-navya.streamlit.app/)**
+
 ## ⚙️ Architecture & Methodology
 My pipeline consists of three distinct phases to ensure 100% replicability and robustness against "dirty" real-world transcription data.
 
