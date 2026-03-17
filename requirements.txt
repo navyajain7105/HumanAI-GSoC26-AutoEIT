@@ -1,0 +1,11 @@
+pandas
+openpyxl
+xlsxwriter
+sentence-transformers
+spacy
+jiwer
+jellyfish
+Levenshtein
+scikit-learn==1.6.1
+joblib
+streamlit
