@@ -1,4 +1,5 @@
 pandas
+numpy
 openpyxl
 xlsxwriter
 sentence-transformers
@@ -10,4 +11,7 @@ scikit-learn==1.6.1
 joblib
 altair==4.2.2
 streamlit>=1.30.0
+xgboost
+lightgbm
+catboost
 https://github.com/explosion/spacy-models/releases/download/es_core_news_md-3.8.0/es_core_news_md-3.8.0-py3-none-any.whl

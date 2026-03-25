@@ -4,7 +4,7 @@
 ## 📌 Project Overview
 This repository contains my solution for **Test II: Automated scoring system**. The objective is to build a highly reproducible, standardized scoring engine that applies the Ortega (2000) meaning-based rubric to Spanish Elicited Imitation Task (EIT) transcriptions.
 
-Rather than relying on arbitrary, hard-coded if/else thresholds, I engineered an **Optimized Machine Learning Pipeline**. The system extracts 8 distinct linguistic features using a hybrid NLP approach and utilizes a Cross-Validated, Balanced Random Forest Classifier to learn the implicit boundaries of human raters and prevent AI hallucination.
+Rather than relying on raw LLM prompting (which is susceptible to hallucination and inconsistency), hard-coded if/else thresholds, I engineered an **Optimized Machine Learning Pipeline**. The system generates synthetic learner data to combat extreme class imbalance, extracts 8 distinct linguistic features using a hybrid NLP approach, and utilizes a Cross-Validated Stacking Ensemble Classifier to learn the implicit boundaries of human raters with high precision and prevent AI hallucination.
 
 ## 🌐 Live Web Demo
 Test the interactive scoring dashboard directly in your browser without writing any code:
@@ -19,7 +19,13 @@ Human transcriptions contain significant noise. I built a custom Python regex cl
 * **Inaudible Audio:** Filtered out `xxx` markers.
 * **Spanish Typographics:** Stripped Spanish punctuation (`¿`, `¡`) while using a custom accent-flattener that explicitly **preserves the `ñ`** (preventing severe semantic distortion).
 
-### 2. Feature Engineering (The Hybrid NLP Engine)
+### 2. Synthetic Data Augmentation (Text-Space Balancing)
+The historical dataset suffers from extreme class imbalance (vast majority are perfect Score 4s, with very few Score 1s). Rather than using pure mathematical interpolation (like SMOTE), I augmented the data in the text space. I utilized spaCy to programmatically degrade perfect Class 4 sentences to simulate real beginner mistakes:
+* **Verb De-conjugation:** Converting conjugated verbs to root infinitives.
+* **Lexical Drops:** Randomly dropping prepositions and articles.
+* **Phonetic/ASR Errors:** Swapping v for b and dropping silent hs. This injected hundreds of realistic, synthetically generated "Beginner" examples into the training set, allowing the model to learn organic failure patterns.
+
+### 3. Feature Engineering (The Hybrid NLP Engine)
 Dense embedding models (like SBERT) suffer from "Semantic Illusion"—they often grant high scores to disjointed, hallucinated words if the general topic loosely matches. To counter this, I extracted 8 deterministic mathematical features:
 * **Semantic Similarity (`intfloat/multilingual-e5-base`):** Generates high-dimensional Cosine Similarity embeddings to verify core meaning.
 * **Word Error Rate Alignment (`jiwer`):** Replaced a blunt "length penalty" with a 4-part alignment matrix (`WER`, `Insertions`, `Deletions`, `Substitutions`). This allows the AI to distinguish between a student dropping a critical verb (a destructive *Deletion*) versus adding a harmless conversational filler word (a forgivable *Insertion*).
@@ -27,21 +33,24 @@ Dense embedding models (like SBERT) suffer from "Semantic Illusion"—they often
 * **Token-Level Phonetic Matching (`Jaro-Winkler`):** Averages phonetic similarity word-by-word to catch learners who mumble "Franken-words" (e.g., *hadesmenido* instead of *ha disminuido*).
 * **Syntactic Meaning Loss (`spaCy`):** A linguistic safety net that checks for dropped negations (missing "no") or swapped antonyms (e.g., *derecha* vs *izquierda*).
 
-### 3. Machine Learning Classification
-I aggregated the provided 29 historical "Example" sheets to create a training dataset of ~1,500 human-graded sentences.
+### 4. Machine Learning Classification
+I aggregated the provided 29 historical "Example" sheets to create a training dataset of ~1,500 human-graded sentences. To maximize accuracy across all proficiency levels, the predictive engine utilizes a **Stacking Classifier Ensemble**:
 * **The Challenge:** The dataset has a severe class imbalance (Majority Score 4s, very few Score 1s). Standard algorithms bias heavily toward perfect students.
-* **The Fix:** I utilized 5-Fold `GridSearchCV` to train a **Random Forest Classifier** with `class_weight='balanced'`, mathematically forcing the AI to penalize itself for misclassifying struggling learners.
+* **The Fix:** I used Synthetic Data Augmentation, 5-Fold to train a **Stacking Classifier Ensemble** with its submodels `class_weight='balanced'`, mathematically forcing the AI to penalize itself for misclassifying struggling learners.
+* **Base Learners:** XGBoost, LightGBM (with balanced class weights), and CatBoost.
+* **Meta-Classifier:** A Logistic Regression manager that learns which underlying model to trust for specific scoring boundaries.
+* A locked system seed (random.seed(5)) ensures 100% deterministic reproducibility for researchers.
 
 ## 🖥️ Interactive Web Application (`app.py`)
 To demonstrate how researchers will actually interact with this model in production, I built a local prototype UI using Streamlit. 
 * **Drag-and-Drop:** Researchers can simply upload their raw `.xlsx` transcription files into the browser.
 * **Instant Inference:** The app loads the cached `autoeit_model.pkl`, extracts the 8 NLP features in real-time, and predicts the scores.
-* **Automated Export:** Generates a clean, downloadable Excel file containing all original sheets with the new `Predicted_Score` appended.
+* **Automated Export:** Generates a clean, downloadable Excel file containing all original sheets with the new `Score` appended.
 
 ## 📊 Results 
-* **Final Cross-Validated Accuracy:** **90.38%**
-* By utilizing WER alignment and a balanced decision tree architecture, the model successfully pushes past the organization's 90% agreement threshold. 
-* **Fairness Metric:** The cross-validation classification report demonstrated a highly stable F1-Score (0.67) and Recall (0.73) for the rarest class (Score 1), proving the engine grades lower-proficiency learners with the exact same reliability as perfect repetitions.
+* **Final Cross-Validated Accuracy:** **93.44%**
+* By utilizing synthetic text augmentation and a gradient-boosting ensemble, the model successfully pushes past the organization's 90% agreement threshold. 
+* **Fairness Metric:** The classification report demonstrated a highly stable F1-Score (>0.90) for the rarest classes, proving the engine grades lower-proficiency learners with the exact same reliability as perfect native repetitions.
 
 ## 📂 Output Files Explained
 To accommodate both technical debugging and non-technical research use, the system generates two different types of output files depending on how it is run:
@@ -58,7 +67,7 @@ While this prototype exceeds the evaluation baseline goals, my GSoC summer timel
 ## 🛠️ How to Run
 1. Ensure all dependencies are installed: 
    ```bash
-    pip install pandas openpyxl xlsxwriter sentence-transformers spacy jiwer jellyfish Levenshtein scikit-learn==1.6.1 joblib streamlit   
+    pip install pandas numpy openpyxl xlsxwriter sentence-transformers spacy jiwer jellyfish Levenshtein scikit-learn==1.6.1 joblib streamlit xgboost lightgbm catboost   
     <!-- or -->
     pip install -r requirements.txt 
 

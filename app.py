@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import re
 import string
 import spacy
@@ -10,14 +11,19 @@ import jiwer
 import joblib
 import io
 from sentence_transformers import SentenceTransformer
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
+from catboost import CatBoostClassifier
+from sklearn.ensemble import StackingClassifier
+from sklearn.linear_model import LogisticRegression
 
 # --- 1. PAGE CONFIGURATION ---
 st.set_page_config(page_title="AutoEIT Scorer", page_icon="📝", layout="centered")
 
 st.title("📝 AutoEIT: Automated Scoring Engine")
 st.markdown("""
-Upload an EIT transcription Excel file. The AI will extract linguistic features (Lexical, Semantic, Phonetic, WER, Syntactic) 
-and use a trained Random Forest to automatically grade the transcriptions.
+Upload an EIT transcription Excel file. The AI will extract 8 linguistic features (Lexical, Semantic, Phonetic, WER, Syntactic) 
+and use a **Stacking Ensemble (XGBoost, LightGBM, CatBoost)** to automatically grade the transcriptions.
 """)
 
 # --- 2. CACHE HEAVY MODELS ---
@@ -28,10 +34,10 @@ def load_nlp_models():
     with st.spinner("Loading NLP Models (SBERT & spaCy)... This takes a minute on startup."):
         sbert = SentenceTransformer('intfloat/multilingual-e5-base')
         spacy_nlp = spacy.load("es_core_news_md")
-        rf_model = joblib.load('autoeit_model.pkl') # Make sure this file is in your folder!
-    return sbert, spacy_nlp, rf_model
+        stacked_model = joblib.load('autoeit_model.pkl') # Make sure this file is in your folder!
+    return sbert, spacy_nlp, stacked_model
 
-model, nlp, rf_model = load_nlp_models()
+model, nlp, stacked_model = load_nlp_models()
 
 # --- 3. NLP FUNCTIONS ---
 def clean_transcript(text):
@@ -155,7 +161,7 @@ if uploaded_file is not None:
                 
                 # Predict
                 X_test = df[['Lexical', 'Semantic', 'Phonetic', 'Antonym_Swap', 'WER', 'Insertions', 'Deletions', 'Substitutions']]
-                df['Score'] = rf_model.predict(X_test)
+                df['Score'] = stacked_model.predict(X_test)
                 
                 # Clean up the output sheet (hide the calculation columns from the user to keep it tidy)
                 output_df = df.drop(columns=['Cleaned_Target', 'Cleaned_Utterance', 'Lexical', 'Semantic', 'Phonetic', 'Antonym_Swap', 'WER', 'Insertions', 'Deletions', 'Substitutions'])
